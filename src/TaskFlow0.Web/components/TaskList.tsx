@@ -38,7 +38,7 @@ export function TaskList({ tasks, onDragEnd, onEditTask, onDeleteTask }: TaskLis
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     {...provided.dragHandleProps}
-                                                    className={`mb-2 ${taskColors[task.status.toLowerCase()]}`}
+                                                    className={`mb-2 border-2 ${taskColors[task.status.toLowerCase()]}`}
                                                 >
                                                     <CardContent className="p-4">
                                                         <h4 className="font-medium mb-1">{task.title}</h4>
