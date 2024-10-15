@@ -1,100 +1,265 @@
-import React from 'react';
-import { Checkbox } from 'src/components/ui/checkbox';
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from 'src/components/ui/dialog';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from 'src/components/ui/dropdown-menu';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from 'src/components/ui/hover-card';
-import { Popover, PopoverTrigger, PopoverContent } from 'src/components/ui/popover';
-import { Toaster } from 'src/components/ui/sonner';
-import { Textarea } from 'src/components/ui/textarea';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from 'src/components/ui/tooltip';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from 'src/components/ui/card';
-import { Calendar } from 'src/components/ui/calendar';
-import { Button } from 'src/components/ui/button';
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from 'src/components/ui/breadcrumb';
-import { Badge } from 'src/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from 'src/components/ui/avatar';
-import { AspectRatio } from 'src/components/ui/aspect-ratio';
-import { Alert, AlertTitle, AlertDescription } from 'src/components/ui/alert';
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from 'src/components/ui/alert-dialog';
+import React, { useState, useEffect } from 'react'
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
+import { PlusIcon, Pencil, Trash2 } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-function App() {
-    return (
-        <div className="App">
-            <Checkbox />
-            <Dialog>
-                <DialogTrigger>Open Dialog</DialogTrigger>
-                <DialogContent>
-                    <DialogTitle>Dialog Title</DialogTitle>
-                    <DialogDescription>Dialog Description</DialogDescription>
-                </DialogContent>
-            </Dialog>
-            <DropdownMenu>
-                <DropdownMenuTrigger>Open Menu</DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem>Item 1</DropdownMenuItem>
-                    <DropdownMenuItem>Item 2</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-            <HoverCard>
-                <HoverCardTrigger>Hover over me</HoverCardTrigger>
-                <HoverCardContent>Hover Card Content</HoverCardContent>
-            </HoverCard>
-            <Popover>
-                <PopoverTrigger>Open Popover</PopoverTrigger>
-                <PopoverContent>Popover Content</PopoverContent>
-            </Popover>
-            <Toaster />
-            <Textarea placeholder="Type here..." />
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger>Hover over me</TooltipTrigger>
-                    <TooltipContent>Tooltip Content</TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Card Title</CardTitle>
-                    <CardDescription>Card Description</CardDescription>
-                </CardHeader>
-                <CardContent>Card Content</CardContent>
-                <CardFooter>Card Footer</CardFooter>
-            </Card>
-            <Calendar />
-            <Button>Click Me</Button>
-            <Breadcrumb>
-                <BreadcrumbList>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink href="#">Home</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                        <BreadcrumbPage>Current Page</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
-            <Badge>Badge</Badge>
-            <Avatar>
-                <AvatarImage src="path/to/image.jpg" />
-                <AvatarFallback>AB</AvatarFallback>
-            </Avatar>
-            <AspectRatio ratio={16 / 9}>
-                <div>Aspect Ratio Content</div>
-            </AspectRatio>
-            <Alert>
-                <AlertTitle>Alert Title</AlertTitle>
-                <AlertDescription>Alert Description</AlertDescription>
-            </Alert>
-            <AlertDialog>
-                <AlertDialogTrigger>Open Alert Dialog</AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogTitle>Alert Dialog Title</AlertDialogTitle>
-                    <AlertDialogDescription>Alert Dialog Description</AlertDialogDescription>
-                    <AlertDialogAction>Confirm</AlertDialogAction>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
-    );
+interface Task {
+    id: string
+    title: string
+    description: string
+    status: 'Pendiente' | 'En Progreso' | 'Completado'
+    priority: 'Baja' | 'Media' | 'Alta'
 }
 
-export default App;
+const statusOrder = ['Pendiente', 'En Progreso', 'Completado']
+
+const taskColors: { [key: string]: string } = {
+    Pendiente: 'border-gray-500',
+    'En Progreso': 'border-blue-500',
+    Completado: 'border-green-500',
+}
+
+const taskService = {
+    getTasks: (): Task[] => JSON.parse(localStorage.getItem('tasks') || '[]'),
+    saveTasks: (tasks: Task[]) => localStorage.setItem('tasks', JSON.stringify(tasks)),
+}
+
+function TaskForm({ task, onSubmit, onCancel, onChange }: {
+    task: Partial<Task>
+    onSubmit: (e: React.FormEvent) => void
+    onCancel: () => void
+    onChange: (field: keyof Task, value: string) => void
+}) {
+    return (
+        <form onSubmit={onSubmit} className="space-y-4 mt-4">
+            <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                    id="title"
+                    value={task.title || ''}
+                    onChange={(e) => onChange('title', e.target.value)}
+                    required
+                />
+            </div>
+            <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                    id="description"
+                    value={task.description || ''}
+                    onChange={(e) => onChange('description', e.target.value)}
+                    required
+                />
+            </div>
+            <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                    value={task.status || 'Pendiente'}
+                    onValueChange={(value) => onChange('status', value as Task['status'])}
+                >
+                    <SelectTrigger id="status">
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                        <SelectItem value="En Progreso">En Progreso</SelectItem>
+                        <SelectItem value="Completado">Completado</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                    value={task.priority || 'Media'}
+                    onValueChange={(value) => onChange('priority', value as Task['priority'])}
+                >
+                    <SelectTrigger id="priority">
+                        <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Baja">Baja</SelectItem>
+                        <SelectItem value="Media">Media</SelectItem>
+                        <SelectItem value="Alta">Alta</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex justify-end space-x-2">
+                <Button type="button" variant="secondary" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button type="submit">
+                    Save
+                </Button>
+            </div>
+        </form>
+    )
+}
+
+function TaskList({ tasks, onDragEnd, onEditTask, onDeleteTask }: {
+    tasks: Task[]
+    onDragEnd: (result: DropResult) => void
+    onEditTask: (task: Task) => void
+    onDeleteTask: (taskId: string) => void
+}) {
+    return (
+        <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {statusOrder.map((status, statusIndex) => (
+                    <Droppable key={status} droppableId={statusIndex.toString()}>
+                        {(provided) => (
+                            <div
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
+                                className="bg-gray-100 p-4 rounded-lg"
+                            >
+                                <h3 className="font-semibold mb-2">{status}</h3>
+                                {tasks
+                                    .filter((task) => task.status === status)
+                                    .map((task, index) => (
+                                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                                            {(provided) => (
+                                                <Card
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    {...provided.dragHandleProps}
+                                                    className={`mb-2 ${taskColors[task.status]}`}
+                                                >
+                                                    <CardHeader>
+                                                        <CardTitle>{task.title}</CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <p>{task.description}</p>
+                                                        <p>Priority: {task.priority}</p>
+                                                    </CardContent>
+                                                    <CardFooter className="flex justify-end space-x-2">
+                                                        <Button size="sm" variant="outline" onClick={() => onEditTask(task)}>
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" onClick={() => onDeleteTask(task.id)}>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </CardFooter>
+                                                </Card>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                {provided.placeholder}
+                            </div>
+                        )}
+                    </Droppable>
+                ))}
+            </div>
+        </DragDropContext>
+    )
+}
+
+export default function App() {
+    const [tasks, setTasks] = useState<Task[]>([])
+    const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+    useEffect(() => {
+        setTasks(taskService.getTasks())
+    }, [])
+
+    const handleAddOrUpdateTask = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (editingTask) {
+            if (editingTask.id) {
+                const updatedTasks = tasks.map((task) =>
+                    task.id === editingTask.id ? { ...editingTask as Task } : task
+                )
+                setTasks(updatedTasks)
+                taskService.saveTasks(updatedTasks)
+            } else {
+                const newTask = { ...editingTask, id: Date.now().toString() } as Task
+                const updatedTasks = [...tasks, newTask]
+                setTasks(updatedTasks)
+                taskService.saveTasks(updatedTasks)
+            }
+            setEditingTask(null)
+            setIsDialogOpen(false)
+        }
+    }
+
+    const handleDeleteTask = (taskId: string) => {
+        const updatedTasks = tasks.filter((task) => task.id !== taskId)
+        setTasks(updatedTasks)
+        taskService.saveTasks(updatedTasks)
+    }
+
+    const onDragEnd = (result: DropResult) => {
+        const { source, destination } = result
+        if (!destination) return
+
+        const newTasks = Array.from(tasks)
+        const [movedTask] = newTasks.splice(source.index, 1)
+        movedTask.status = statusOrder[parseInt(destination.droppableId)] as Task['status']
+        newTasks.splice(destination.index, 0, movedTask)
+
+        setTasks(newTasks)
+        taskService.saveTasks(newTasks)
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+            <div className="w-full max-w-4xl p-8 bg-white rounded-xl shadow-lg">
+                <h1 className="text-3xl font-bold mb-6 text-center">TaskFlow0</h1>
+
+                <div className="flex justify-center space-x-2 mb-4">
+                    <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                </div>
+
+                <h2 className="text-2xl font-semibold mb-4 text-center">Lista de Tareas</h2>
+                {tasks.length === 0 ? (
+                    <p className="text-center bg-gray-50 rounded-lg shadow p-4">
+                        No hay tareas aún. ¡Haz clic en el botón "+" para agregar una tarea!
+                    </p>
+                ) : (
+                    <div className="max-h-[60vh] overflow-y-auto">
+                        <TaskList
+                            tasks={tasks}
+                            onDragEnd={onDragEnd}
+                            onEditTask={(task) => {
+                                setEditingTask(task)
+                                setIsDialogOpen(true)
+                            }}
+                            onDeleteTask={handleDeleteTask}
+                        />
+                    </div>
+                )}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button
+                            className="fixed bottom-8 right-8 rounded-full w-14 h-14 shadow-lg"
+                            onClick={() => setEditingTask({ title: '', description: '', status: 'Pendiente', priority: 'Media' })}
+                        >
+                            <PlusIcon className="w-6 h-6" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{editingTask?.id ? 'Edit Task' : 'Add New Task'}</DialogTitle>
+                        </DialogHeader>
+                        <TaskForm
+                            task={editingTask || {}}
+                            onSubmit={handleAddOrUpdateTask}
+                            onCancel={() => {
+                                setEditingTask(null)
+                                setIsDialogOpen(false)
+                            }}
+                            onChange={(field, value) => setEditingTask((prev) => ({ ...prev, [field]: value }))}
+                        />
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </div>
+    )
+}
