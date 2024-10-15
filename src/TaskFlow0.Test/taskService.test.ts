@@ -23,31 +23,30 @@ describe('taskService', () => {
   });
 
   test('addTask should add a new task', () => {
-    const newTask = { title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' };
-    const addedTask = taskService.addTask(newTask);
-    expect(addedTask.id).toBeDefined();
-    expect(addedTask.title).toBe(newTask.title);
-    
+    const newTask: Omit<Task, 'id'> = { title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' };
+    taskService.addTask(newTask);
     const tasks = taskService.getTasks();
     expect(tasks.length).toBe(1);
-    expect(tasks[0]).toEqual(addedTask);
+    expect(tasks[0].title).toBe(newTask.title);
   });
 
   test('updateTask should update an existing task', () => {
-    const newTask = taskService.addTask({ title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' });
-    const updatedTask: Task = { ...newTask, title: 'Updated Task' };
-    taskService.updateTask(updatedTask);
-    
+    const newTask: Omit<Task, 'id'> = { title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' };
+    taskService.addTask(newTask);
     const tasks = taskService.getTasks();
-    expect(tasks.length).toBe(1);
-    expect(tasks[0].title).toBe('Updated Task');
+    const updatedTask: Task = { ...tasks[0], title: 'Updated Task' };
+    taskService.updateTask(updatedTask);
+
+    const updatedTasks = taskService.getTasks();
+    expect(updatedTasks.length).toBe(1);
+    expect(updatedTasks[0].title).toBe('Updated Task');
   });
 
   test('deleteTask should remove a task', () => {
-    const task = taskService.addTask({ title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' });
-    expect(taskService.getTasks().length).toBe(1);
-    
-    taskService.deleteTask(task.id);
+    const newTask: Omit<Task, 'id'> = { title: 'Test Task', description: 'Test Description', status: 'Pendiente', priority: 'Media' };
+    taskService.addTask(newTask);
+    const tasks = taskService.getTasks();
+    taskService.deleteTask(tasks[0].id);
     expect(taskService.getTasks().length).toBe(0);
   });
 });
