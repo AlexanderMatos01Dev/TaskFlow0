@@ -1,7 +1,9 @@
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Task } from 'src/TaskFlow0.Data/types';
 import { Button } from "@/components/ui/button";
-import { PencilIcon, TrashIcon } from "lucide-react";
-import { Task, statusOrder } from '../../TaskFlow0.Data/types';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Edit2, Trash2 } from "lucide-react";
 
 interface TaskListProps {
   tasks: Task[];
@@ -11,81 +13,58 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, onDragEnd, onEditTask, onDeleteTask }: TaskListProps) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pendiente": return "bg-gray-500";
-      case "En Progreso": return "bg-blue-500";
-      case "Completado": return "bg-green-500";
-      default: return "bg-gray-500";
-    }
-  };
+  const statusColumns = ['Pendiente', 'En Progreso', 'Completado'];
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex space-x-4 overflow-x-auto pb-4">
-        {statusOrder.map((status, statusIndex) => {
-          const statusTasks = tasks.filter((task) => task.status === status);
-          if (statusTasks.length === 0) return null;
-
-          return (
-            <Droppable key={status} droppableId={statusIndex.toString()}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`flex-1 min-w-[300px] p-4 rounded-xl ${
-                    snapshot.isDraggingOver ? 'bg-gray-100' : 'bg-white'
-                  }`}
-                >
-                  <h3 className={`text-xl font-semibold mb-4 ${getStatusColor(status)} text-white p-2 rounded-lg`}>
-                    {status}
-                  </h3>
-                  <div className="space-y-4">
-                    {statusTasks.map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="bg-white p-4 rounded-xl shadow-md border border-gray-200"
-                          >
-                            <div className={`w-full h-2 ${getStatusColor(task.status)} rounded-t-xl mb-2`}></div>
-                            <h4 className="text-lg font-semibold mb-2">{task.title}</h4>
-                            <p className="text-gray-600 mb-2">{task.description}</p>
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="font-medium">Prioridad: {task.priority}</span>
-                              <div className="space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => onEditTask(task)}
-                                  className="p-1"
-                                >
-                                  <PencilIcon className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => onDeleteTask(task.id)}
-                                  className="p-1 text-red-500 hover:text-red-700"
-                                >
-                                  <TrashIcon className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                </div>
-              )}
-            </Droppable>
-          );
-        })}
-      </div>
-    </DragDropContext>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {statusColumns.map((status, statusIndex) => (
+              <Droppable key={status} droppableId={statusIndex.toString()}>
+                {(provided) => (
+                    <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="bg-gray-100 p-4 rounded-lg"
+                    >
+                      <h3 className="font-semibold mb-2">{status}</h3>
+                      {tasks
+                          .filter((task) => task.status === status)
+                          .map((task, index) => (
+                              <Draggable key={task.id} draggableId={task.id} index={index}>
+                                {(provided) => (
+                                    <Card
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        className="mb-2"
+                                    >
+                                      <CardContent className="p-4">
+                                        <h4 className="font-medium mb-1">{task.title}</h4>
+                                        <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                        <div className="flex justify-between items-center">
+                                          <Badge variant={task.priority === 'Alta' ? 'destructive' : task.priority === 'Media' ? 'default' : 'secondary'}>
+                                            {task.priority}
+                                          </Badge>
+                                          <div>
+                                            <Button variant="ghost" size="icon" onClick={() => onEditTask(task)}>
+                                              <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => onDeleteTask(task.id)}>
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                )}
+                              </Draggable>
+                          ))}
+                      {provided.placeholder}
+                    </div>
+                )}
+              </Droppable>
+          ))}
+        </div>
+      </DragDropContext>
   );
 }
