@@ -100,7 +100,7 @@ function TaskForm({ task, onSubmit, onCancel, onChange }: {
     )
 }
 
-function TaskList({ tasks, onDragEnd, onEditTask, onDeleteTask }: {
+export function TaskList({ tasks, onDragEnd, onEditTask, onDeleteTask }: {
     tasks: Task[]
     onDragEnd: (result: DropResult) => void
     onEditTask: (task: Task) => void

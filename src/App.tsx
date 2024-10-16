@@ -5,6 +5,7 @@ import { TaskList } from 'src/TaskFlow0.Web/components/TaskList';
 import { TaskForm } from 'src/TaskFlow0.Web/components/TaskForm';
 import { taskService } from 'src/TaskFlow0.Data/taskService';
 import { Task, statusOrder } from 'src/TaskFlow0.Data/types';
+import { DropResult } from 'react-beautiful-dnd';
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -32,12 +33,16 @@ export default function App() {
     setTasks(taskService.getTasks());
   };
 
-  const onDragEnd = (result: { source: { index: number }, destination: { index: number, droppableId: string } }) => {
+  const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
+
+    // Verificar si destination es null o undefined
     if (!destination) return;
 
     const newTasks = Array.from(tasks);
     const [movedTask] = newTasks.splice(source.index, 1);
+
+    // Actualizar el status basándonos en destination.droppableId
     movedTask.status = statusOrder[parseInt(destination.droppableId)] as 'Pendiente' | 'En Progreso' | 'Completado';
     newTasks.splice(destination.index, 0, movedTask);
 
